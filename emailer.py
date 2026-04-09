@@ -12,10 +12,14 @@ import streamlit as st
 
 load_dotenv()
 
-resend.api_key = os.getenv(
-    "RESEND_API_KEY") or st.secrets.get("RESEND_API_KEY", "")
-EMAIL_RECEIVER = os.getenv(
-    "EMAIL_RECEIVER") or st.secrets.get("EMAIL_RECEIVER", "")
+try:
+    resend.api_key = os.getenv(
+        "RESEND_API_KEY") or st.secrets.get("RESEND_API_KEY", "")
+    EMAIL_RECEIVER = os.getenv(
+        "EMAIL_RECEIVER") or st.secrets.get("EMAIL_RECEIVER", "")
+except Exception:
+    resend.api_key = os.getenv("RESEND_API_KEY", "")
+    EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "")
 
 
 def generate_html_report(result: dict, df: pd.DataFrame) -> str:

@@ -17,7 +17,11 @@ from langgraph.graph import StateGraph, END
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
+try:
+    GROQ_API_KEY = os.getenv(
+        "GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
+except Exception:
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 llm = ChatGroq(
     model="llama-3.1-8b-instant",
