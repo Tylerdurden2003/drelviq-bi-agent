@@ -1,0 +1,11 @@
+langgraph
+langchain-groq
+langchain-core
+pandas
+numpy
+plotly
+streamlit
+python-dotenv
+scikit-learn
+resend
+sentence-transformers
