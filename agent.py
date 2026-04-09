@@ -1,7 +1,7 @@
 # agent.py
 # Autonomous Business Intelligence Agent
-# LangGraph pipeline with smart routing — agent decides which nodes to run
-# Every LLM claim grounded in real pandas data — zero hallucination
+# LangGraph 10-node pipeline with smart routing
+# Works locally (.env) and on Hugging Face (st.secrets)
 
 import os
 import pandas as pd
@@ -10,16 +10,19 @@ from dotenv import load_dotenv
 from typing import TypedDict, Annotated
 import operator
 
+import streamlit as st
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import StateGraph, END
 
 load_dotenv()
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
+
 llm = ChatGroq(
     model="llama-3.1-8b-instant",
     temperature=0,
-    api_key=os.getenv("GROQ_API_KEY")
+    api_key=GROQ_API_KEY
 )
 
 
@@ -34,12 +37,12 @@ class BIState(TypedDict):
     numeric_cols: list
     categorical_cols: list
     date_cols: list
-    run_trend: bool               # smart router decisions
+    run_trend: bool
     run_forecast: bool
     run_correlation: bool
     run_comparison: bool
     run_anomaly: bool
-    router_reasoning: str         # why the router made its decisions
+    router_reasoning: str
     data_summary: str
     column_analysis: str
     correlation_analysis: str
@@ -77,14 +80,10 @@ def detect_columns(df: pd.DataFrame) -> dict:
     }
 
 
-# ── SMART ROUTER ─────────────────────────────────────────────────────────────
+# ── SMART ROUTER ──────────────────────────────────────────────────────────────
 
 def decide_analysis_plan(df: pd.DataFrame, col_types: dict,
                          comparison_mode: bool) -> dict:
-    """
-    Looks at the data and decides which analyses are relevant.
-    Returns a dict of booleans for each node.
-    """
     numeric_cols = col_types["numeric"]
     categorical_cols = col_types["categorical"]
     date_cols = col_types["date"]
@@ -92,7 +91,6 @@ def decide_analysis_plan(df: pd.DataFrame, col_types: dict,
     reasoning = []
     plan = {}
 
-    # trend analysis — only if date column exists
     if len(date_cols) > 0:
         plan["run_trend"] = True
         reasoning.append(
@@ -104,24 +102,17 @@ def decide_analysis_plan(df: pd.DataFrame, col_types: dict,
             "❌ Trend analysis skipped — no date column detected"
         )
 
-    # forecast — only if date column exists and enough rows
     if len(date_cols) > 0 and n_rows >= 50:
         plan["run_forecast"] = True
         reasoning.append(
             f"✅ Forecast — date column present, {n_rows} rows sufficient"
         )
-    elif len(date_cols) > 0 and n_rows < 50:
-        plan["run_forecast"] = False
-        reasoning.append(
-            f"❌ Forecast skipped — only {n_rows} rows, need at least 50"
-        )
     else:
         plan["run_forecast"] = False
         reasoning.append(
-            "❌ Forecast skipped — no date column"
+            f"❌ Forecast skipped — need date column and 50+ rows"
         )
 
-    # correlation — only if 2+ numeric columns
     if len(numeric_cols) >= 2:
         plan["run_correlation"] = True
         reasoning.append(
@@ -133,7 +124,6 @@ def decide_analysis_plan(df: pd.DataFrame, col_types: dict,
             f"❌ Correlation skipped — only {len(numeric_cols)} numeric column"
         )
 
-    # anomaly detection — only if categorical + numeric exist
     if len(categorical_cols) > 0 and len(numeric_cols) > 0:
         plan["run_anomaly"] = True
         reasoning.append(
@@ -145,16 +135,11 @@ def decide_analysis_plan(df: pd.DataFrame, col_types: dict,
             "❌ Anomaly detection skipped — need both categorical and numeric"
         )
 
-    # comparison — only if comparison mode and second file uploaded
     plan["run_comparison"] = comparison_mode
     if comparison_mode:
-        reasoning.append(
-            "✅ Comparison — two datasets provided"
-        )
+        reasoning.append("✅ Comparison — two datasets provided")
     else:
-        reasoning.append(
-            "❌ Comparison skipped — single dataset mode"
-        )
+        reasoning.append("❌ Comparison skipped — single dataset mode")
 
     plan["router_reasoning"] = "\n".join(reasoning)
     return plan
@@ -699,7 +684,7 @@ def build_bi_agent():
 
 if __name__ == "__main__":
     import sys
-    csv_path = sys.argv[1] if len(sys.argv) > 1 else "sales_data.csv"
+    csv_path = sys.argv[1] if len(sys.argv) > 1 else "startups_data.csv"
     df = pd.read_csv(csv_path)
 
     agent = build_bi_agent()
@@ -733,7 +718,7 @@ if __name__ == "__main__":
     }
 
     print("=" * 60)
-    print("AUTONOMOUS BI AGENT")
+    print("DRELVIQ — AUTONOMOUS BI AGENT")
     print("=" * 60)
     result = agent.invoke(initial_state)
     print(result["final_report"])

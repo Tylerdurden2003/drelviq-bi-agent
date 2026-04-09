@@ -1,6 +1,6 @@
 # emailer.py
 # Drelviq — sends HTML BI report via Resend API
-# Supports multiple recipients
+# Works locally (.env) and on Hugging Face (st.secrets)
 
 import os
 import resend
@@ -8,10 +8,14 @@ import pandas as pd
 from datetime import datetime
 from dotenv import load_dotenv
 
+import streamlit as st
+
 load_dotenv()
 
-resend.api_key = os.getenv("RESEND_API_KEY")
-EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
+resend.api_key = os.getenv(
+    "RESEND_API_KEY") or st.secrets.get("RESEND_API_KEY", "")
+EMAIL_RECEIVER = os.getenv(
+    "EMAIL_RECEIVER") or st.secrets.get("EMAIL_RECEIVER", "")
 
 
 def generate_html_report(result: dict, df: pd.DataFrame) -> str:
@@ -234,20 +238,13 @@ def generate_html_report(result: dict, df: pd.DataFrame) -> str:
 def send_report(result: dict, df: pd.DataFrame,
                 recipients: list = None,
                 subject: str = None) -> bool:
-    """
-    Sends the HTML Drelviq report via Resend API.
-    recipients: list of email addresses — defaults to EMAIL_RECEIVER
-    Returns True if successful, False if failed.
-    """
     if not resend.api_key:
-        print("RESEND_API_KEY not set in .env")
+        print("RESEND_API_KEY not set")
         return False
 
-    # use provided recipients or fall back to .env default
     if not recipients:
         recipients = [EMAIL_RECEIVER]
 
-    # filter out empty or invalid
     recipients = [
         r for r in recipients
         if r and "@" in r and "." in r
@@ -271,11 +268,6 @@ def send_report(result: dict, df: pd.DataFrame,
         print(f"Report sent to {recipients} — ID: {response['id']}")
         return True
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        import traceback
+        traceback.print_exc()
         return False
-
-
-if __name__ == "__main__":
-    print("Drelviq emailer ready.")
-    print(f"API Key set: {'Yes' if resend.api_key else 'No'}")
-    print(f"Default receiver: {EMAIL_RECEIVER}")
