@@ -1,3 +1,12 @@
+---
+title: Drelviq BI
+emoji: ⚡
+colorFrom: purple
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # ⚡ Drelviq
 
 Drelviq is an autonomous business intelligence agent. You upload a CSV — it figures out what to analyze, runs the analysis, and gives you a report. No configuration, no SQL, no dashboarding skills required.
@@ -92,6 +101,7 @@ drelviq-bi-agent/
 ├── app.py            # Streamlit dashboard
 ├── data.py           # Sample dataset generator
 ├── emailer.py        # Resend email integration
+├── Dockerfile        # HF Docker deployment
 ├── startups_data.csv # Default sample dataset
 ├── startups_2024.csv # Baseline for comparison
 ├── startups_2025.csv # Comparison dataset
