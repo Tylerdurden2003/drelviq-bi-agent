@@ -451,8 +451,7 @@ when relevant. Never make up data."""
 
 # ── AGENT NODES ───────────────────────────────────────────────────────────────
 
-def detection_node(state: BIState) -> BIState:
-    print("Detecting column types...")
+def node_detect(state: BIState) -> BIState:
     df = pd.read_json(state["df_json"])
     col_types = detect_columns(df)
     return {
@@ -463,8 +462,7 @@ def detection_node(state: BIState) -> BIState:
     }
 
 
-def router_node(state: BIState) -> BIState:
-    print("Smart router deciding analysis plan...")
+def node_route(state: BIState) -> BIState:
     df = pd.read_json(state["df_json"])
     col_types = {
         "numeric": state["numeric_cols"],
@@ -474,12 +472,10 @@ def router_node(state: BIState) -> BIState:
     plan = decide_analysis_plan(
         df, col_types, state.get("comparison_mode", False)
     )
-    print(f"\nRouter decisions:\n{plan['router_reasoning']}\n")
     return plan
 
 
-def summary_node(state: BIState) -> BIState:
-    print("Computing data summary...")
+def node_summary(state: BIState) -> BIState:
     df = pd.read_json(state["df_json"])
     summary = compute_data_summary(
         df, state["numeric_cols"], state["categorical_cols"]
@@ -487,8 +483,7 @@ def summary_node(state: BIState) -> BIState:
     return {"data_summary": summary, "insights": [summary]}
 
 
-def col_analysis_node(state: BIState) -> BIState:
-    print("Running column analysis...")
+def node_cols(state: BIState) -> BIState:
     df = pd.read_json(state["df_json"])
     analysis, chart_data = compute_column_analysis(
         df, state["numeric_cols"], state["categorical_cols"]
@@ -500,12 +495,9 @@ def col_analysis_node(state: BIState) -> BIState:
     }
 
 
-def trend_node(state: BIState) -> BIState:
+def node_trend(state: BIState) -> BIState:
     if not state.get("run_trend"):
-        print("Skipping trend analysis (router decision)")
         return {"trend_analysis": "", "insights": []}
-
-    print("Running trend analysis...")
     df = pd.read_json(state["df_json"])
     trend, chart_data = compute_trends(
         df, state["numeric_cols"], state["date_cols"]
@@ -519,26 +511,17 @@ def trend_node(state: BIState) -> BIState:
     }
 
 
-def correlation_node(state: BIState) -> BIState:
+def node_corr(state: BIState) -> BIState:
     if not state.get("run_correlation"):
-        print("Skipping correlation analysis (router decision)")
         return {"correlation_analysis": "", "insights": []}
-
-    print("Running correlation analysis...")
     df = pd.read_json(state["df_json"])
     corr = compute_correlations(df, state["numeric_cols"])
-    return {
-        "correlation_analysis": corr,
-        "insights": [corr]
-    }
+    return {"correlation_analysis": corr, "insights": [corr]}
 
 
-def forecast_node(state: BIState) -> BIState:
+def node_forecast(state: BIState) -> BIState:
     if not state.get("run_forecast"):
-        print("Skipping forecast (router decision)")
         return {"forecast_analysis": "", "insights": []}
-
-    print("Running forecast analysis...")
     df = pd.read_json(state["df_json"])
     forecast, chart_data = compute_forecast(
         df, state["numeric_cols"], state["date_cols"]
@@ -552,12 +535,9 @@ def forecast_node(state: BIState) -> BIState:
     }
 
 
-def anomaly_node(state: BIState) -> BIState:
+def node_anomaly(state: BIState) -> BIState:
     if not state.get("run_anomaly"):
-        print("Skipping anomaly detection (router decision)")
         return {"anomalies": "", "insights": []}
-
-    print("Detecting anomalies...")
     df = pd.read_json(state["df_json"])
     anomalies = compute_anomalies(
         df, state["numeric_cols"], state["categorical_cols"]
@@ -565,12 +545,9 @@ def anomaly_node(state: BIState) -> BIState:
     return {"anomalies": anomalies, "insights": [anomalies]}
 
 
-def comparison_node(state: BIState) -> BIState:
+def node_compare(state: BIState) -> BIState:
     if not state.get("run_comparison") or not state.get("df2_json"):
-        print("Skipping comparison (router decision)")
         return {"comparison_analysis": "", "insights": []}
-
-    print("Running comparison analysis...")
     df1 = pd.read_json(state["df_json"])
     df2 = pd.read_json(state["df2_json"])
     comparison, chart_data = compute_comparison(
@@ -587,9 +564,7 @@ def comparison_node(state: BIState) -> BIState:
     }
 
 
-def report_node(state: BIState) -> BIState:
-    print("Generating final AI report...")
-
+def node_report(state: BIState) -> BIState:
     all_data = "\n\n".join(filter(None, [
         state.get("data_summary", ""),
         state.get("column_analysis", ""),
@@ -657,28 +632,28 @@ Be specific. Every claim must come from the data above.
 def build_bi_agent():
     graph = StateGraph(BIState)
 
-    graph.add_node("detection", detection_node)
-    graph.add_node("router", router_node)
-    graph.add_node("summary", summary_node)
-    graph.add_node("col_analysis", col_analysis_node)
-    graph.add_node("trend", trend_node)
-    graph.add_node("correlation", correlation_node)
-    graph.add_node("forecast", forecast_node)
-    graph.add_node("anomaly", anomaly_node)
-    graph.add_node("comparison", comparison_node)
-    graph.add_node("report", report_node)
+    graph.add_node("node_detect", node_detect)
+    graph.add_node("node_route", node_route)
+    graph.add_node("node_summary", node_summary)
+    graph.add_node("node_cols", node_cols)
+    graph.add_node("node_trend", node_trend)
+    graph.add_node("node_corr", node_corr)
+    graph.add_node("node_forecast", node_forecast)
+    graph.add_node("node_anomaly", node_anomaly)
+    graph.add_node("node_compare", node_compare)
+    graph.add_node("node_report", node_report)
 
-    graph.set_entry_point("detection")
-    graph.add_edge("detection", "router")
-    graph.add_edge("router", "summary")
-    graph.add_edge("summary", "col_analysis")
-    graph.add_edge("col_analysis", "trend")
-    graph.add_edge("trend", "correlation")
-    graph.add_edge("correlation", "forecast")
-    graph.add_edge("forecast", "anomaly")
-    graph.add_edge("anomaly", "comparison")
-    graph.add_edge("comparison", "report")
-    graph.add_edge("report", END)
+    graph.set_entry_point("node_detect")
+    graph.add_edge("node_detect", "node_route")
+    graph.add_edge("node_route", "node_summary")
+    graph.add_edge("node_summary", "node_cols")
+    graph.add_edge("node_cols", "node_trend")
+    graph.add_edge("node_trend", "node_corr")
+    graph.add_edge("node_corr", "node_forecast")
+    graph.add_edge("node_forecast", "node_anomaly")
+    graph.add_edge("node_anomaly", "node_compare")
+    graph.add_edge("node_compare", "node_report")
+    graph.add_edge("node_report", END)
 
     return graph.compile()
 
