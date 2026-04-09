@@ -1,7 +1,6 @@
 # agent.py
-# Autonomous Business Intelligence Agent
+# Drelviq — Autonomous Business Intelligence Agent
 # LangGraph 10-node pipeline with smart routing
-# Works locally (.env) and on Hugging Face (st.secrets)
 
 import os
 import pandas as pd
@@ -488,7 +487,7 @@ def summary_node(state: BIState) -> BIState:
     return {"data_summary": summary, "insights": [summary]}
 
 
-def column_analysis_node(state: BIState) -> BIState:
+def col_analysis_node(state: BIState) -> BIState:
     print("Running column analysis...")
     df = pd.read_json(state["df_json"])
     analysis, chart_data = compute_column_analysis(
@@ -661,7 +660,7 @@ def build_bi_agent():
     graph.add_node("detection", detection_node)
     graph.add_node("router", router_node)
     graph.add_node("summary", summary_node)
-    graph.add_node("column_analysis", column_analysis_node)
+    graph.add_node("col_analysis", col_analysis_node)
     graph.add_node("trend", trend_node)
     graph.add_node("correlation", correlation_node)
     graph.add_node("forecast", forecast_node)
@@ -672,8 +671,8 @@ def build_bi_agent():
     graph.set_entry_point("detection")
     graph.add_edge("detection", "router")
     graph.add_edge("router", "summary")
-    graph.add_edge("summary", "column_analysis")
-    graph.add_edge("column_analysis", "trend")
+    graph.add_edge("summary", "col_analysis")
+    graph.add_edge("col_analysis", "trend")
     graph.add_edge("trend", "correlation")
     graph.add_edge("correlation", "forecast")
     graph.add_edge("forecast", "anomaly")
