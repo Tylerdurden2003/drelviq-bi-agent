@@ -1,10 +1,10 @@
-langgraph
-langchain-groq
-langchain-core
+langgraph==0.2.55
+langchain-groq==0.2.2
+langchain-core==0.3.28
 pandas
 numpy
 plotly
-streamlit
+streamlit==1.41.0
 python-dotenv
 scikit-learn
 resend

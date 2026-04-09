@@ -1,7 +1,6 @@
 # app.py
 # Drelviq — Autonomous Business Intelligence Platform
 # Professional dark UI, smart routing, comparison, memory, email reports
-# User can specify any recipient email before sending
 
 import streamlit as st
 import plotly.express as px
@@ -991,7 +990,7 @@ if df1 is not None:
                 history_text += f"\n{role}: {turn['content']}\n"
 
         report_text = f"""
-Drelviq INTELLIGENCE REPORT
+DRELVIQ INTELLIGENCE REPORT
 ============================
 
 ROUTER DECISIONS
@@ -1022,13 +1021,12 @@ DATA SUMMARY
 {result.get('data_summary', '')}
 {history_text}
 """
-        # download buttons
         dl_col1, dl_col2 = st.columns(2)
         with dl_col1:
             st.download_button(
                 label="📥 Download Report",
                 data=report_text,
-                file_name="Drelviq_report.txt",
+                file_name="drelviq_report.txt",
                 mime="text/plain",
                 use_container_width=True
             )
@@ -1050,8 +1048,7 @@ DATA SUMMARY
                 📧 Send Report via Email
             </div>
             <div style='font-size:0.78rem;color:#666;margin-bottom:16px;'>
-                Send the full Drelviq report to any email address —
-                your boss, your team, or yourself
+                Send the full Drelviq report to any email address
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1061,8 +1058,7 @@ DATA SUMMARY
             recipient_email = st.text_input(
                 "Recipient email address",
                 placeholder="boss@company.com",
-                label_visibility="collapsed",
-                help="Enter any email address to send the report to"
+                label_visibility="collapsed"
             )
         with email_col2:
             send_btn = st.button(
@@ -1071,7 +1067,6 @@ DATA SUMMARY
                 type="primary"
             )
 
-        # optional: add multiple recipients
         with st.expander("➕ Add more recipients", expanded=False):
             extra_emails = st.text_area(
                 "Additional recipients (one per line)",
@@ -1086,7 +1081,6 @@ DATA SUMMARY
             elif "@" not in recipient_email or "." not in recipient_email:
                 st.error("❌ Please enter a valid email address.")
             else:
-                # build full recipient list
                 recipients = [recipient_email.strip()]
                 if extra_emails:
                     for email in extra_emails.strip().split("\n"):
@@ -1101,7 +1095,7 @@ DATA SUMMARY
                     success = send_report(
                         result, df1,
                         recipients=recipients,
-                        subject=f"⚡ Drelviq Intelligence Report"
+                        subject="⚡ Drelviq Intelligence Report"
                     )
 
                 if success:
@@ -1110,7 +1104,7 @@ DATA SUMMARY
                     )
                 else:
                     st.error(
-                        "❌ Failed to send. Check RESEND_API_KEY in .env"
+                        "❌ Failed to send. Check RESEND_API_KEY in secrets."
                     )
 
         with st.expander("📄 View Full Dataset", expanded=False):
